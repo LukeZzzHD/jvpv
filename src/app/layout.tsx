@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`font-sans ${inter.variable} bg-white`}
-        style={{ width: "100vw", height: "100vh" }}
+        style={{ width: "100vw", height: "100vh", overflow: "hidden" }}
       >
         <TRPCReactProvider cookies={cookies().toString()}>
           {children}
