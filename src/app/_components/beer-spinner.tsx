@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/Addons.js";
 import { Silkscreen } from "next/font/google";
@@ -11,6 +11,8 @@ const silkscreen = Silkscreen({
 });
 
 export function BeerSpinner() {
+  const [isLoading, setIsLoading] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
@@ -41,7 +43,21 @@ export function BeerSpinner() {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const loader = new FBXLoader();
+    setIsLoading(true);
+    const loader = new FBXLoader(
+      new THREE.LoadingManager(
+        function onLoad() {
+          console.log("Loading finished");
+        },
+        function onProgress(url, loaded, total) {
+          console.log(`loaded: ${loaded}, total: ${total}`);
+          if (loaded === total) {
+            console.log("loaded === total");
+            setIsLoading(false);
+          }
+        },
+      ),
+    );
     const modelPath = "/beer/source/Beer.fbx"; // Update path to FBX model
     loader.load(modelPath, (fbx) => {
       const model = fbx;
@@ -64,24 +80,7 @@ export function BeerSpinner() {
 
     animate();
 
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      if (cameraRef.current) {
-        cameraRef.current.aspect = width / height;
-        cameraRef.current.updateProjectionMatrix();
-      }
-
-      if (rendererRef.current) {
-        rendererRef.current.setSize(width, height);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-
     return () => {
-      window.removeEventListener("resize", handleResize);
       renderer.dispose();
       // Dispose other resources
     };
@@ -89,7 +88,16 @@ export function BeerSpinner() {
 
   return (
     <>
-      <div className="w-100 h-100 fixed" ref={containerRef} />
+      {isLoading && (
+        <div className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 transform">
+          <p className="text-3xl">Pouring beer...</p>
+        </div>
+      )}
+      <div
+        className="w-100 h-100 fixed"
+        ref={containerRef}
+        hidden={isLoading}
+      />
       <div className="fixed left-0 right-0 top-20 mx-auto">
         <h1
           className={`z-10 text-center text-5xl text-black ${silkscreen.className}`}
